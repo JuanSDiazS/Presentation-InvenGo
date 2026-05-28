@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INVENGO — Sistema de Gestión de Inventarios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0f1a;
+    --surface:  #111827;
+    --card:     #161f30;
+    --border:   #1e2d45;
+    --accent:   #3b82f6;
+    --accent2:  #06b6d4;
+    --warn:     #f59e0b;
+    --success:  #10b981;
+    --danger:   #ef4444;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --light:    #94a3b8;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── SCROLLBAR ─────────────────────────────── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── NAV ───────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 2.5rem;
+    background: rgba(10, 15, 26, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--text); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); font-size: 0.82rem; text-decoration: none;
+    letter-spacing: 0.05em; text-transform: uppercase; font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+
+  /* ── HERO ──────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 6rem 2rem 4rem;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,130,246,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(6,182,212,0.10) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3);
+    color: var(--accent); border-radius: 999px;
+    padding: 0.35rem 1rem; font-size: 0.78rem; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2rem;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-tag::before { content: '●'; font-size: 0.5rem; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    font-weight: 800; line-height: 1.05;
+    letter-spacing: -0.02em;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  .hero h1 .blue { color: var(--accent); }
+  .hero h1 .cyan { color: var(--accent2); }
+
+  .hero-sub {
+    max-width: 560px; margin: 1.5rem auto 0;
+    color: var(--light); font-size: 1.05rem; font-weight: 300;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+  .hero-meta {
+    display: flex; gap: 2rem; margin-top: 3rem; justify-content: center;
+    flex-wrap: wrap;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+  .hero-meta-item { text-align: center; }
+  .hero-meta-item .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .hero-meta-item .value { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem; }
+
+  .scroll-hint {
+    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    animation: fadeUp 0.6s 0.6s ease both;
+  }
+  .scroll-hint::after {
+    content: ''; width: 1px; height: 40px; background: linear-gradient(to bottom, var(--muted), transparent);
+    animation: lineDown 1.5s infinite;
+  }
+  @keyframes lineDown { 0%{transform:scaleY(0);transform-origin:top} 50%{transform:scaleY(1);transform-origin:top} 51%{transform:scaleY(1);transform-origin:bottom} 100%{transform:scaleY(0);transform-origin:bottom} }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTIONS ──────────────────────────────── */
+  section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+  section.full { max-width: 100%; padding: 5rem 0; }
+
+  .section-label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--accent); font-weight: 500; margin-bottom: 0.6rem;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 700; line-height: 1.2; margin-bottom: 1rem;
+  }
+  .section-body {
+    color: var(--light); max-width: 620px; font-size: 0.97rem;
+  }
+
+  /* ── DIVIDER ───────────────────────────────── */
+  .divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 0;
+  }
+
+  /* ── PROBLEMA ──────────────────────────────── */
+  .problema-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .problema-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.8rem;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .problema-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .problema-card .icon {
+    font-size: 1.8rem; margin-bottom: 1rem;
+  }
+  .problema-card h3 {
+    font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .problema-card p { color: var(--light); font-size: 0.88rem; }
+  .problema-card .stat {
+    font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800;
+    color: var(--danger); margin-top: 0.8rem;
+  }
+  .problema-card .stat span { font-size: 0.85rem; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 300; }
+
+  /* ── PREGUNTA PROBLEMA ─────────────────────── */
+  .pregunta-box {
+    margin-top: 3rem;
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(6,182,212,0.06));
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 16px; padding: 2.5rem;
+    position: relative;
+  }
+  .pregunta-box::before {
+    content: '"';
+    font-family: 'Syne', sans-serif;
+    font-size: 8rem; font-weight: 800;
+    color: rgba(59,130,246,0.1);
+    position: absolute; top: -1rem; left: 1.5rem;
+    line-height: 1;
+  }
+  .pregunta-box p {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 600; line-height: 1.5;
+    color: var(--text); position: relative; z-index: 1;
+  }
+
+  /* ── OBJETIVOS ─────────────────────────────── */
+  .obj-general {
+    margin-top: 2.5rem;
+    background: var(--card); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 1.5rem 2rem;
+  }
+  .obj-general p { font-size: 0.97rem; color: var(--text); }
+
+  .obj-list { margin-top: 2rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .obj-item {
+    display: flex; gap: 1rem; align-items: flex-start;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.1rem 1.4rem;
+    transition: border-color 0.2s;
+  }
+  .obj-item:hover { border-color: var(--accent2); }
+  .obj-num {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+    color: var(--accent); min-width: 1.8rem;
+  }
+  .obj-item p { font-size: 0.9rem; color: var(--light); }
+
+  /* ── METODOLOGÍA ───────────────────────────── */
+  .meto-flow {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0; margin-top: 3rem; position: relative;
+  }
+  .meto-step {
+    padding: 2rem 1.5rem;
+    background: var(--card); border: 1px solid var(--border);
+    position: relative; text-align: center;
+  }
+  .meto-step:not(:last-child)::after {
+    content: '→';
+    position: absolute; right: -0.6rem; top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent); font-size: 1.2rem; z-index: 2;
+    background: var(--bg); padding: 0 0.2rem;
+  }
+  .meto-step:first-child { border-radius: 12px 0 0 12px; }
+  .meto-step:last-child  { border-radius: 0 12px 12px 0; }
+  .meto-step .step-n {
+    font-family: 'Syne', sans-serif; font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--accent); margin-bottom: 0.6rem; font-weight: 600;
+  }
+  .meto-step .step-icon { font-size: 2rem; margin-bottom: 0.7rem; }
+  .meto-step h3 {
+    font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .meto-step p { font-size: 0.8rem; color: var(--light); }
+
+  /* simulación tabla */
+  .sim-table { width: 100%; border-collapse: collapse; margin-top: 2.5rem; font-size: 0.88rem; }
+  .sim-table th {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 0.8rem 1rem; text-align: left;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent);
+  }
+  .sim-table td {
+    border: 1px solid var(--border); padding: 0.8rem 1rem;
+    color: var(--light); vertical-align: top;
+  }
+  .sim-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .badge-bad  { color: var(--danger);  font-weight: 500; }
+  .badge-good { color: var(--success); font-weight: 500; }
+
+  /* ── IA COMPARATIVA ────────────────────────── */
+  .ia-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; }
+  .ia-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.8rem; position: relative; overflow: hidden;
+  }
+  .ia-card.best { border-color: var(--accent); }
+  .ia-card.best::after {
+    content: 'MEJOR RESULTADO';
+    position: absolute; top: 1rem; right: -1.5rem;
+    background: var(--accent); color: white;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em;
+    padding: 0.25rem 2rem; transform: rotate(35deg); transform-origin: center;
+  }
+  .ia-logo {
+    font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800;
+    margin-bottom: 0.3rem;
+  }
+  .ia-by { font-size: 0.75rem; color: var(--muted); margin-bottom: 1.2rem; }
+  .ia-score {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.2rem;
+  }
+  .stars { color: var(--warn); font-size: 0.9rem; }
+  .ia-score span { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+  .ia-pros { list-style: none; }
+  .ia-pros li {
+    font-size: 0.83rem; color: var(--light); padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border); display: flex; gap: 0.5rem;
+  }
+  .ia-pros li:last-child { border-bottom: none; }
+  .ia-pros li::before { content: '·'; color: var(--accent); }
+
+  /* ── TECNOLOGÍAS ───────────────────────────── */
+  .tech-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 3rem; }
+  .tech-pill {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.2rem 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .tech-pill:hover { border-color: var(--accent2); transform: translateY(-2px); }
+  .tech-pill .t-icon { font-size: 1.6rem; }
+  .tech-pill .t-name { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; }
+  .tech-pill .t-desc { font-size: 0.78rem; color: var(--muted); }
+
+  /* ── VISTAS ────────────────────────────────── */
+  .vistas-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 3rem; }
+  .vista-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.4rem;
+    transition: border-color 0.2s;
+  }
+  .vista-card:hover { border-color: var(--accent); }
+  .vista-n {
+    font-family: 'Syne', sans-serif; font-size: 0.65rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin-bottom: 0.4rem;
+  }
+  .vista-card h3 { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .vista-card p { font-size: 0.8rem; color: var(--light); }
+  .vista-tag {
+    display: inline-block; margin-top: 0.7rem;
+    background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+    color: var(--accent); font-size: 0.68rem; padding: 0.15rem 0.6rem; border-radius: 999px;
+  }
+
+  /* ── IMPACTO ÉTICO ─────────────────────────── */
+  .etico-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 3rem; }
+  .etico-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.8rem;
+    transition: border-color 0.2s;
+  }
+  .etico-card.social:hover { border-color: var(--success); }
+  .etico-card.etico:hover  { border-color: var(--warn); }
+  .etico-card .e-cat {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 600; margin-bottom: 0.8rem;
+  }
+  .etico-card.social .e-cat { color: var(--success); }
+  .etico-card.etico  .e-cat { color: var(--warn); }
+  .etico-card h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .etico-card ul { list-style: none; }
+  .etico-card ul li {
+    font-size: 0.85rem; color: var(--light); padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border); display: flex; gap: 0.6rem;
+  }
+  .etico-card ul li:last-child { border-bottom: none; }
+  .etico-card.social ul li::before { content: '✓'; color: var(--success); font-weight: 700; }
+  .etico-card.etico  ul li::before { content: '!'; color: var(--warn); font-weight: 700; }
+
+  /* ── VIABILIDAD ────────────────────────────── */
+  .viab-timeline { position: relative; margin-top: 3rem; padding-left: 2rem; }
+  .viab-timeline::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: linear-gradient(to bottom, var(--accent), var(--accent2), var(--border));
+  }
+  .viab-item { position: relative; margin-bottom: 2.5rem; }
+  .viab-item::before {
+    content: ''; position: absolute; left: -2.35rem; top: 0.3rem;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--bg);
+  }
+  .viab-item:nth-child(2)::before { background: var(--accent2); }
+  .viab-item:nth-child(3)::before { background: var(--success); }
+  .viab-period {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin-bottom: 0.3rem;
+  }
+  .viab-item h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 0.6rem; }
+  .viab-features { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .feat-chip {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; padding: 0.25rem 0.8rem;
+    font-size: 0.78rem; color: var(--light);
+  }
+
+  /* costo table */
+  .cost-table { width: 100%; border-collapse: collapse; margin-top: 2rem; font-size: 0.85rem; }
+  .cost-table th {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 0.7rem 1rem; text-align: left;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent);
+  }
+  .cost-table td { border: 1px solid var(--border); padding: 0.7rem 1rem; color: var(--light); }
+  .cost-table tr:last-child td { color: var(--success); font-weight: 500; background: rgba(16,185,129,0.05); }
+  .cost-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  /* ── EQUIPO ─────────────────────────────────── */
+  .equipo-section {
+    background: linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%);
+    border-top: 1px solid var(--border); padding: 5rem 2rem;
+    text-align: center;
+  }
+  .equipo-cards { display: flex; gap: 2rem; justify-content: center; margin-top: 2.5rem; flex-wrap: wrap; }
+  .eq-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem 3rem; text-align: center;
+  }
+  .eq-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+    margin: 0 auto 1rem; color: white;
+  }
+  .eq-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+  .eq-role { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+  /* ── FOOTER ─────────────────────────────────── */
+  footer {
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 2rem; text-align: center;
+    font-size: 0.78rem; color: var(--muted);
+  }
+  footer strong { color: var(--accent); font-family: 'Syne', sans-serif; }
+
+  /* ── INTERSECTION OBSERVER ANIMATIONS ─────── */
+  .reveal {
+    opacity: 0; transform: translateY(28px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+
+  /* ── RESPONSIVE ─────────────────────────────── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem; }
+    .nav-links { display: none; }
+    .problema-grid, .ia-grid, .tech-grid, .vistas-grid, .etico-grid { grid-template-columns: 1fr; }
+    .meto-flow { grid-template-columns: 1fr 1fr; }
+    .meto-step:not(:last-child)::after { display: none; }
+    .meto-step:nth-child(2) { border-radius: 0 12px 0 0; }
+    .meto-step:nth-child(3) { border-radius: 0 0 0 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">INVEN<span>GO</span></a>
+  <ul class="nav-links">
+    <li><a href="#problema">Problema</a></li>
+    <li><a href="#objetivos">Objetivos</a></li>
+    <li><a href="#metodologia">Metodología</a></li>
+    <li><a href="#sistema">Sistema</a></li>
+    <li><a href="#impacto">Impacto</a></li>
+    <li><a href="#viabilidad">Viabilidad</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Proyecto académico · 2026-1 · Ucompensar</div>
+  <h1>Sistema de<br><span class="blue">Gestión</span> de<br><span class="cyan">Inventarios</span></h1>
+  <p class="hero-sub">Una solución web para que las microempresas colombianas controlen su stock de forma eficiente, sin costos de licencia y desde cualquier dispositivo.</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <div class="label">Institución</div>
+      <div class="value">Ucompensar</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="label">Materia</div>
+      <div class="value">Intro. TIC</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="label">Profesora</div>
+      <div class="value">Nathaly Díaz</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="label">Semestre</div>
+      <div class="value">2026-1</div>
+    </div>
+  </div>
+  <div class="scroll-hint">Explorar</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- PROBLEMA -->
+<section id="problema">
+  <div class="reveal">
+    <p class="section-label">01 — Planteamiento</p>
+    <h2 class="section-title">El problema de las microempresas con su inventario</h2>
+    <p class="section-body">Colombia tiene más de 4 millones de microempresas — el 90% del tejido empresarial. La mayoría lleva su inventario en papel o Excel básico, con consecuencias directas en sus finanzas.</p>
+  </div>
+
+  <div class="problema-grid">
+    <div class="problema-card reveal reveal-delay-1">
+      <div class="icon">📋</div>
+      <h3>Registro manual sin control</h3>
+      <p>Hojas de papel, cuadernos y Excel sin fórmulas. Cualquier error queda registrado sin corrección automática.</p>
+      <div class="stat">100% <span>de semanas con faltantes sin detectar a tiempo</span></div>
+    </div>
+    <div class="problema-card reveal reveal-delay-2">
+      <div class="icon">⏱️</div>
+      <h3>Tiempo perdido cada día</h3>
+      <p>El control de inventario manual consume tiempo que podría dedicarse a atender clientes o crecer el negocio.</p>
+      <div class="stat">45 min <span>diarios en promedio por negocio</span></div>
+    </div>
+    <div class="problema-card reveal reveal-delay-1">
+      <div class="icon">📉</div>
+      <h3>Pérdidas evitables</h3>
+      <p>Sin alertas de reposición, los productos se agotan antes de ser reabastecidos. El resultado son ventas perdidas.</p>
+      <div class="stat">10–20% <span>del margen bruto mensual perdido (CCB, 2023)</span></div>
+    </div>
+    <div class="problema-card reveal reveal-delay-2">
+      <div class="icon">🔍</div>
+      <h3>Sin visibilidad del negocio</h3>
+      <p>Los propietarios no saben qué productos rotan más, cuáles sobran ni cuál es el valor real de su inventario en este momento.</p>
+      <div class="stat">$0 <span>invertido en sistemas de control en ambas microempresas estudiadas</span></div>
+    </div>
+  </div>
+
+  <div class="pregunta-box reveal">
+    <p>¿De qué manera un sistema de control de inventarios implementado mediante tecnologías de la información puede optimizar la gestión de existencias en las microempresas RJC y Calderas y Automáticos durante el semestre 2026-1?</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OBJETIVOS -->
+<section id="objetivos">
+  <div class="reveal">
+    <p class="section-label">02 — Objetivos</p>
+    <h2 class="section-title">¿Qué queremos lograr?</h2>
+  </div>
+
+  <div class="obj-general reveal">
+    <p><strong>Objetivo general:</strong> Desarrollar una página web de gestión de inventarios que permita a las microempresas RJC y Calderas y Automáticos llevar un control más eficiente, rápido y fácil de su stock.</p>
+  </div>
+
+  <div class="obj-list">
+    <div class="obj-item reveal">
+      <span class="obj-num">01</span>
+      <p>Diagnosticar cómo se maneja actualmente el inventario en ambas microempresas, identificando los problemas más comunes y las pérdidas que generan.</p>
+    </div>
+    <div class="obj-item reveal reveal-delay-1">
+      <span class="obj-num">02</span>
+      <p>Analizar las necesidades funcionales que debe tener la página web a partir del diagnóstico realizado.</p>
+    </div>
+    <div class="obj-item reveal reveal-delay-2">
+      <span class="obj-num">03</span>
+      <p>Interpretar los resultados del análisis para identificar las mejoras más útiles y cómo reducir las pérdidas por faltantes o sobreinventario.</p>
+    </div>
+    <div class="obj-item reveal reveal-delay-3">
+      <span class="obj-num">04</span>
+      <p>Desarrollar y probar la página web con registro de productos, control de entradas/salidas, alertas automáticas y reportes exportables.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- METODOLOGÍA -->
+<section id="metodologia">
+  <div class="reveal">
+    <p class="section-label">03 — Metodología</p>
+    <h2 class="section-title">Cómo abordamos el problema</h2>
+    <p class="section-body">La metodología se estructuró en cuatro etapas articuladas, más un apartado de cómo la IA apoyó cada una.</p>
+  </div>
+
+  <div class="meto-flow reveal">
+    <div class="meto-step">
+      <div class="step-n">Paso 1</div>
+      <div class="step-icon">🏢</div>
+      <h3>Recolección de datos</h3>
+      <p>Entrevistas, observación directa y revisión de registros en RJC y Calderas y Automáticos.</p>
+    </div>
+    <div class="meto-step">
+      <div class="step-n">Paso 2</div>
+      <div class="step-icon">🔎</div>
+      <h3>Análisis del problema</h3>
+      <p>Identificación de 3 causas raíz: registro sin validación, sin alertas y sin historial.</p>
+    </div>
+    <div class="meto-step">
+      <div class="step-n">Paso 3</div>
+      <div class="step-icon">💡</div>
+      <h3>Propuesta de solución</h3>
+      <p>Evaluación de 3 alternativas. Selección de página web responsive con justificación.</p>
+    </div>
+    <div class="meto-step">
+      <div class="step-n">Paso 4</div>
+      <div class="step-icon">📊</div>
+      <h3>Simulación de resultados</h3>
+      <p>Proyección de mejoras: -78% tiempo, -60-70% pérdidas, alertas automáticas.</p>
+    </div>
+  </div>
+
+  <div style="margin-top: 3rem;">
+    <div class="reveal">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:0.5rem;">Simulación de resultados proyectados</h3>
+    </div>
+    <table class="sim-table reveal">
+      <thead>
+        <tr>
+          <th>Indicador</th>
+          <th>Sin sistema (actual)</th>
+          <th>Con sistema (proyectado)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tiempo diario de control</td>
+          <td class="badge-bad">~45 min/día por negocio</td>
+          <td class="badge-good">~10 min/día (−78%)</td>
+        </tr>
+        <tr>
+          <td>Errores de registro por semana</td>
+          <td class="badge-bad">3–5 errores/semana</td>
+          <td class="badge-good">0–1 errores (validación automática)</td>
+        </tr>
+        <tr>
+          <td>Faltantes no detectados a tiempo</td>
+          <td class="badge-bad">Semanalmente</td>
+          <td class="badge-good">Alertas automáticas de stock mínimo</td>
+        </tr>
+        <tr>
+          <td>Pérdida mensual estimada</td>
+          <td class="badge-bad">10–20% del margen bruto</td>
+          <td class="badge-good">Reducción estimada del 60–70%</td>
+        </tr>
+        <tr>
+          <td>Visibilidad del inventario</td>
+          <td class="badge-bad">Nula</td>
+          <td class="badge-good">Reportes en tiempo real + PDF/Excel</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- IA comparativa -->
+  <div style="margin-top:4rem;">
+    <div class="reveal">
+      <h3 style="font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:0.3rem;">¿Cómo apoyó la IA la construcción de esta metodología?</h3>
+      <p style="color:var(--light); font-size:0.9rem;">Se usó el mismo prompt en 3 entornos de IA y se compararon los resultados.</p>
+    </div>
+    <div class="ia-grid">
+      <div class="ia-card best reveal">
+        <div class="ia-logo">ChatGPT</div>
+        <div class="ia-by">OpenAI</div>
+        <div class="ia-score">
+          <span class="stars">★★★★★</span>
+          <span>5 / 5</span>
+        </div>
+        <ul class="ia-pros">
+          <li>Siguió los 4 pasos exactos solicitados</li>
+          <li>Identificó causas raíz con consecuencias económicas</li>
+          <li>Generó tabla comparativa de alternativas</li>
+          <li>Mejor adaptación al contexto bogotano</li>
+        </ul>
+      </div>
+      <div class="ia-card reveal reveal-delay-1">
+        <div class="ia-logo">Copilot</div>
+        <div class="ia-by">Microsoft</div>
+        <div class="ia-score">
+          <span class="stars">★★★★☆</span>
+          <span>4 / 5</span>
+        </div>
+        <ul class="ia-pros">
+          <li>Muy útil para la parte técnica</li>
+          <li>Detalló el stack de tecnologías</li>
+          <li>Menos enfocado en el contexto social</li>
+          <li>Más relevante para el módulo 4</li>
+        </ul>
+      </div>
+      <div class="ia-card reveal reveal-delay-2">
+        <div class="ia-logo">Gemini</div>
+        <div class="ia-by">Google</div>
+        <div class="ia-score">
+          <span class="stars">★★★☆☆</span>
+          <span>3 / 5</span>
+        </div>
+        <ul class="ia-pros">
+          <li>Útil como punto de partida</li>
+          <li>Agrupó análisis y recolección en un bloque</li>
+          <li>Sin tabla de simulación, solo texto</li>
+          <li>Requirió ajustes significativos</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SISTEMA -->
+<section id="sistema">
+  <div class="reveal">
+    <p class="section-label">04 — Desarrollo</p>
+    <h2 class="section-title">El sistema: tecnologías y vistas</h2>
+    <p class="section-body">Aplicación web de tres capas, construida con tecnologías open source, accesible desde cualquier dispositivo.</p>
+  </div>
+
+  <div class="tech-grid">
+    <div class="tech-pill reveal">
+      <div class="t-icon">🌐</div>
+      <div>
+        <div class="t-name">HTML5 + Bootstrap 5</div>
+        <div class="t-desc">Frontend responsive</div>
+      </div>
+    </div>
+    <div class="tech-pill reveal reveal-delay-1">
+      <div class="t-icon">⚡</div>
+      <div>
+        <div class="t-name">JavaScript</div>
+        <div class="t-desc">Interactividad + SweetAlert2</div>
+      </div>
+    </div>
+    <div class="tech-pill reveal reveal-delay-2">
+      <div class="t-icon">🔧</div>
+      <div>
+        <div class="t-name">PHP 8</div>
+        <div class="t-desc">Lógica de negocio</div>
+      </div>
+    </div>
+    <div class="tech-pill reveal">
+      <div class="t-icon">🗄️</div>
+      <div>
+        <div class="t-name">MySQL</div>
+        <div class="t-desc">Base de datos relacional</div>
+      </div>
+    </div>
+    <div class="tech-pill reveal reveal-delay-1">
+      <div class="t-icon">☁️</div>
+      <div>
+        <div class="t-name">Hosting gratuito</div>
+        <div class="t-desc">InfinityFree / servidor Ucompensar</div>
+      </div>
+    </div>
+    <div class="tech-pill reveal reveal-delay-2">
+      <div class="t-icon">🔐</div>
+      <div>
+        <div class="t-name">Auth. + HTTPS</div>
+        <div class="t-desc">Seguridad y cifrado</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTAS -->
+  <div style="margin-top:4rem;">
+    <div class="reveal">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:0.3rem;">Vistas del sistema (validadas con IA)</h3>
+      <p style="color:var(--light);font-size:0.88rem;margin-bottom:0;">El listado fue presentado a ChatGPT, Gemini y Copilot para validación. Se añadieron 2 vistas sugeridas por la IA.</p>
+    </div>
+    <div class="vistas-grid">
+      <div class="vista-card reveal"><div class="vista-n">Vista 1</div><h3>🔐 Inicio de sesión</h3><p>Autenticación con usuario y contraseña. Validación de credenciales.</p><span class="vista-tag">Todos los usuarios</span></div>
+      <div class="vista-card reveal reveal-delay-1"><div class="vista-n">Vista 2</div><h3>📊 Dashboard</h3><p>4 KPIs: total productos, stock crítico, entradas del día y valor del inventario.</p><span class="vista-tag">Administrador</span></div>
+      <div class="vista-card reveal reveal-delay-2"><div class="vista-n">Vista 3</div><h3>📦 Lista de productos</h3><p>Tabla completa con búsqueda, filtros y acciones. Filas en rojo si hay stock crítico.</p><span class="vista-tag">Administrador</span></div>
+      <div class="vista-card reveal"><div class="vista-n">Vista 4</div><h3>➕ Agregar / Editar producto</h3><p>Formulario con validación. Campos: código, nombre, precios, stock mínimo, proveedor.</p><span class="vista-tag">Administrador</span></div>
+      <div class="vista-card reveal reveal-delay-1"><div class="vista-n">Vistas 5–6</div><h3>📥📤 Entradas y Salidas</h3><p>Formularios separados para registrar llegada de mercancía y ventas.</p><span class="vista-tag">Admin / Operario</span></div>
+      <div class="vista-card reveal reveal-delay-2"><div class="vista-n">Vista 7</div><h3>📜 Historial de movimientos</h3><p>Todos los movimientos filtrable por fecha, tipo y producto.</p><span class="vista-tag">Administrador</span></div>
+      <div class="vista-card reveal"><div class="vista-n">Vista 8</div><h3>⚠️ Alertas de stock crítico</h3><p>Tarjetas con productos bajo el mínimo y botón de reabastecimiento.</p><span class="vista-tag">Administrador</span></div>
+      <div class="vista-card reveal reveal-delay-1"><div class="vista-n">Vista 9</div><h3>📈 Reportes</h3><p>Selección de rango y tipo de reporte. Exportación a PDF y Excel.</p><span class="vista-tag">Administrador</span></div>
+      <div class="vista-card reveal reveal-delay-2"><div class="vista-n">Vistas 10–11</div><h3>🏭 Proveedores y Configuración</h3><p>Sugeridas por IA: gestión de proveedores y ajustes generales del sistema.</p><span class="vista-tag">+ Sugeridas por IA</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- IMPACTO ÉTICO -->
+<section id="impacto">
+  <div class="reveal">
+    <p class="section-label">05 — Ética y Sociedad</p>
+    <h2 class="section-title">Impacto social y consideraciones éticas</h2>
+    <p class="section-body">Un sistema tecnológico no existe en el vacío. Esta propuesta tiene consecuencias sociales concretas y responsabilidades éticas que asumimos.</p>
+  </div>
+  <div class="etico-grid">
+    <div class="etico-card social reveal">
+      <div class="e-cat">Impacto Social Positivo</div>
+      <h3>Lo que el sistema aporta a la sociedad</h3>
+      <ul>
+        <li>Reduce la carga operativa de propietarios de microempresas</li>
+        <li>Estabiliza el ingreso de familias que viven del pequeño negocio</li>
+        <li>Democratiza el acceso a herramientas de gestión profesional</li>
+        <li>Transforma la intuición en decisiones basadas en datos</li>
+        <li>No genera desplazamiento laboral en negocios de este tamaño</li>
+      </ul>
+    </div>
+    <div class="etico-card etico reveal reveal-delay-1">
+      <div class="e-cat">Consideraciones Éticas</div>
+      <h3>Riesgos que gestionamos responsablemente</h3>
+      <ul>
+        <li>Cifrado de contraseñas y conexión HTTPS (privacidad)</li>
+        <li>Cumplimiento de la Ley 1581 de 2012 (datos personales)</li>
+        <li>Exportación a Excel como plan de contingencia offline</li>
+        <li>Todo código de IA fue revisado y ajustado manualmente</li>
+        <li>Capacitación a usuarios para evitar sesgo por datos incorrectos</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- VIABILIDAD -->
+<section id="viabilidad">
+  <div class="reveal">
+    <p class="section-label">06 — Crecimiento</p>
+    <h2 class="section-title">¿Es viable? ¿Puede crecer?</h2>
+    <p class="section-body">El proyecto tiene costo cero en fase inicial y tres horizontes claros de crecimiento.</p>
+  </div>
+
+  <table class="cost-table reveal" style="margin-bottom:3rem;">
+    <thead>
+      <tr>
+        <th>Concepto</th>
+        <th>Fase inicial (2026-1)</th>
+        <th>Fase de crecimiento</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Desarrollo del sistema</td><td>$0 (equipo del proyecto)</td><td>$0 (mantenimiento propio)</td></tr>
+      <tr><td>Hosting web</td><td>$0 (servidor universitario)</td><td>~$5–10 USD/mes</td></tr>
+      <tr><td>Dominio propio</td><td>$0 (subdominio gratuito)</td><td>~$10–15 USD/año</td></tr>
+      <tr><td>Capacitación a usuarios</td><td>$0 (presencial por el equipo)</td><td>$0 (manual PDF)</td></tr>
+      <tr><td><strong>Total estimado</strong></td><td><strong>$0</strong></td><td><strong>~$70–135 USD/año</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="viab-timeline">
+    <div class="viab-item reveal">
+      <div class="viab-period">Corto plazo · Semestre 2026-1</div>
+      <h3>Versión mínima viable (MVP)</h3>
+      <div class="viab-features">
+        <span class="feat-chip">Registro de productos</span>
+        <span class="feat-chip">Entradas y salidas</span>
+        <span class="feat-chip">Alertas de stock</span>
+        <span class="feat-chip">Reportes PDF/Excel</span>
+        <span class="feat-chip">1 usuario por negocio</span>
+      </div>
+    </div>
+    <div class="viab-item reveal">
+      <div class="viab-period">Mediano plazo · 2026-2 a 2027</div>
+      <h3>Expansión de funcionalidades</h3>
+      <div class="viab-features">
+        <span class="feat-chip">Facturación electrónica (DIAN)</span>
+        <span class="feat-chip">Punto de venta (POS)</span>
+        <span class="feat-chip">Aplicación móvil (PWA)</span>
+        <span class="feat-chip">Sistema de roles</span>
+        <span class="feat-chip">Notificaciones por email</span>
+      </div>
+    </div>
+    <div class="viab-item reveal">
+      <div class="viab-period">Largo plazo · 2027 en adelante</div>
+      <h3>Modelo SaaS para múltiples microempresas</h3>
+      <div class="viab-features">
+        <span class="feat-chip">Plataforma multiempresa</span>
+        <span class="feat-chip">ML para predicción de demanda</span>
+        <span class="feat-chip">KPIs avanzados</span>
+        <span class="feat-chip">Integración con Mercado Libre</span>
+        <span class="feat-chip">Shopify Sync</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- EQUIPO -->
+<div class="equipo-section">
+  <p class="section-label" style="margin-bottom:0.6rem;">Equipo</p>
+  <h2 class="section-title" style="text-align:center;">Desarrolladores del proyecto</h2>
+  <div class="equipo-cards">
+    <div class="eq-card">
+      <div class="eq-avatar">JD</div>
+      <div class="eq-name">Juan Sebastián Díaz Sánchez</div>
+      <div class="eq-role">Desarrollo frontend · Documentación</div>
+    </div>
+    <div class="eq-card">
+      <div class="eq-avatar">AJ</div>
+      <div class="eq-name">Ángel Ricardo Joya Patiño</div>
+      <div class="eq-role">Desarrollo backend · Base de datos</div>
+    </div>
+  </div>
+  <p style="margin-top:2rem;color:var(--muted);font-size:0.85rem;">
+    Fundación Universitaria Ucompensar · Introducción a las TIC · Profesora: Nathaly Díaz Morales
+  </p>
+</div>
+
+<footer>
+  <strong>INVENGO</strong> — Sistema de Gestión de Inventarios para Microempresas &nbsp;·&nbsp; Bogotá, 2026
+</footer>
+
+<script>
+  // Intersection Observer para animaciones de entrada
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+
+  // Nav active link highlight
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 120) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.style.color = a.getAttribute('href') === '#' + current ? 'var(--accent)' : '';
+    });
+  });
+</script>
+</body>
+</html>
